@@ -6,18 +6,9 @@ from .schemas import (
     ShipmentRead,
     ShipmentUpdate,
 )
+from .database import shipments, save
 
 app = FastAPI()
-
-shipments = {
-    12734: {"weight": 1.6, "content": "wooden table", "status": "in transit"},
-    12735: {"weight": 2.3, "content": "office chair", "status": "delivered"},
-    12736: {"weight": 1.5, "content": "desk lamp", "status": "pending"},
-    12737: {"weight": 1.8, "content": "keyboard", "status": "in transit"},
-    12738: {"weight": 5.2, "content": "monitor", "status": "in transit"},
-    12739: {"weight": 1.4, "content": "mouse", "status": "delivered"},
-    12740: {"weight": 3.1, "content": "bookshelf", "status": "pending"},
-}
 
 
 ### Read a shipment by id
@@ -39,11 +30,11 @@ def submit_shipment(shipment: ShipmentCreate) -> dict[str, Any]:
     new_id = max(shipments.keys()) + 1
     # Add to shipments dict
     shipments[new_id] = {
-        "weight": shipment.weight,
-        "content": shipment.content,
-        "destination": shipment.destination,
+        **shipment.model_dump(),
+        "id": new_id,
         "status": "placed",
     }
+    save()
     # Return id for later use
     return {"id": new_id}
 

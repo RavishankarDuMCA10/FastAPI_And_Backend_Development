@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status, HTTPException
 from scalar_fastapi import get_scalar_api_reference
 from typing import Any
-
+from .schemas import Shipment
 
 app = FastAPI()
 
@@ -16,38 +16,35 @@ shipments = {
 }
 
 
+### Read a shipment by id
 @app.get("/shipment")
-def get_shipment(id: int | None = None) -> dict[str, Any]:
-    if not id:
-        id = max(shipments.keys())
-
+def get_shipment(id: int) -> dict[str, Any]:
+    # Check for shipment with given id
     if id not in shipments:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Given id dose not exist."
+            status_code=status.HTTP_404_NOT_FOUND, detail="Given id dose not exist!"
         )
 
     return shipments[id]
 
 
+### Create a new shipment with content and weight
 @app.post("/shipment")
-def submit_shipment(data: dict[str, Any]) -> dict[str, Any]:
-    content = data["content"]
-    weight = data["weight"]
-    if weight > 25:
-        raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
-            detail="Maximum weight limit is 25",
-        )
+def submit_shipment(shipment: Shipment) -> dict[str, Any]:
+    # Create and assign shipment a new id
     new_id = max(shipments.keys()) + 1
+    # Add to shipments dict
     shipments[new_id] = {
-        "weight": weight,
-        "content": content,
+        "weight": shipment.weight,
+        "content": shipment.content,
+        "destination": shipment.destination,
         "status": "placed",
     }
-
+    # Return id for later use
     return {"id": new_id}
 
 
+### Update field of a shipment
 @app.get("/shipment/{field}")
 def get_shipment_field(field: str, id: int) -> dict[str, Any]:
     return {field: shipments[id][field]}
@@ -65,32 +62,12 @@ def shipment_update(
     return shipments[id]
 
 
+### Update field of a shipment
 @app.patch("/shipment")
-def patch_shipment(
-    id: int,
-    content: str | None = None,
-    weight: float | None = None,
-    status: str | None = None,
-):
-    shipment = shipments[id]
-    # Update the provided fields
-    if content:
-        shipment["content"] = content
-    if weight:
-        shipment["weight"] = weight
-    if status:
-        shipment["status"] = status
-
-    shipments[id] = shipment
-    return shipment
-
-
-@app.patch("/shipment_v2")
-def patch_shipment_v2(id: int, body: dict[str, Any]):
-    shipment = shipments[id]
-    shipment.update(body)
-    shipments[id] = shipment
-    return shipment
+def patch_shipment(id: int, body: dict[str, Any]):
+    # Update data with given fields
+    shipments[id].update(body)
+    return shipments[id]
 
 
 @app.delete("/shipment")

@@ -1,30 +1,29 @@
 import sqlite3
 from typing import Any
 
-from schemas import ShipmentCreate, ShipmentUpdate
+from .schemas import ShipmentCreate, ShipmentUpdate
 
 
 class Database:
     def __init__(self):
         # Make the connection with database
-        self.conn = sqlite3.connect("sqlite.db")
+        self.conn = sqlite3.connect("sqlite.db", check_same_thread=False)
         # Get cursor to execute queries and fetch data
         self.cur = self.conn.cursor()
         # Create table if not exists
-        self.create_table("shipment")
+        self.create_table()
 
-    def create_table(self, name: str):
+    def create_table(self):
         # 1. Create a table
         self.cur.execute(
             """
-            CREATE TABLE IF NOT EXISTS ? (
+            CREATE TABLE IF NOT EXISTS shipment (
                 id INTEGER PRIMARY KEY,
                 content TEXT,
                 weight REAL,
                 status TEXT
             )
-        """,
-            (name),
+        """
         )
 
     def create(self, shipment: ShipmentCreate) -> int:
@@ -32,7 +31,7 @@ class Database:
         self.cur.execute("SELECT MAX(id) FROM shipment")
         result = self.cur.fetchone()
 
-        new_id = result[0] + 1
+        new_id = result[0] + 1 if result[0] else 1
         # # 2. Add shipment data
         self.cur.execute(
             """
@@ -66,7 +65,7 @@ class Database:
             else None
         )
 
-    def update(self, shipment: ShipmentUpdate) -> dict[str, Any]:
+    def update(self, id: int, shipment: ShipmentUpdate) -> dict[str, Any] | None:
         self.cur.execute(
             """
             UPDATE shipment SET status = :status
@@ -82,9 +81,9 @@ class Database:
         self.cur.execute(
             """
             DELETE from shipment 
-            WHERE id = ?
+            WHERE id = :id
         """,
-            id,
+            {"id": id},
         )
         self.conn.commit()
 

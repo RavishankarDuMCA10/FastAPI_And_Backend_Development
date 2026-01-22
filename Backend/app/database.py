@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Any
-
+from contextlib import contextmanager
 from .schemas import ShipmentCreate, ShipmentUpdate
 
 
@@ -91,18 +91,37 @@ class Database:
         print("...connection closed")
         self.conn.close()
 
-    def __enter__(self):
-        print("Enter the context")
-        self.connect_to_db()
-        # Create table if not exists
-        self.create_table()
-        return self
+    # def __enter__(self):
+    #     print("Enter the context")
+    #     self.connect_to_db()
+    #     # Create table if not exists
+    #     self.create_table()
+    #     return self
 
-    def __exit__(self, *arg):
-        print("Exiting the context")
-        self.close()
+    # def __exit__(self, *arg):
+    #     print("Exiting the context")
+    #     self.close()
 
 
 # Usage
-with Database() as db:
+@contextmanager
+def managed_db():
+    db = Database()
+    print("Enter the setup")
+    # Setup
+    db.connect_to_db()
+    db.create_table()
+
+    yield db
+
+    print("exit the context")
+    # Dispose
+    db.close()
+
+
+with managed_db() as db:
+    print(db.get(0))
+    print(db.get(1))
     print(db.get(2))
+    print(db.get(3))
+    print(db.get(6))

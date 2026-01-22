@@ -5,13 +5,12 @@ from .schemas import ShipmentCreate, ShipmentUpdate
 
 
 class Database:
-    def __init__(self):
+    def connect_to_db(self):
         # Make the connection with database
         self.conn = sqlite3.connect("sqlite.db", check_same_thread=False)
         # Get cursor to execute queries and fetch data
         self.cur = self.conn.cursor()
-        # Create table if not exists
-        self.create_table()
+        print("connected to the sqlite.db...")
 
     def create_table(self):
         # 1. Create a table
@@ -89,4 +88,21 @@ class Database:
 
     def close(self):
         # Close the connection when done
+        print("...connection closed")
         self.conn.close()
+
+    def __enter__(self):
+        print("Enter the context")
+        self.connect_to_db()
+        # Create table if not exists
+        self.create_table()
+        return self
+
+    def __exit__(self, *arg):
+        print("Exiting the context")
+        self.close()
+
+
+# Usage
+with Database() as db:
+    print(db.get(2))

@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
-from rich import print, panel
+
 from fastapi import FastAPI
+from rich import panel, print
 
 
 @asynccontextmanager

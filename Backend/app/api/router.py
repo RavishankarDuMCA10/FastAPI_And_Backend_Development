@@ -4,7 +4,9 @@ from app.database.models import Shipment, ShipmentStatus
 from app.database.session import SessionDep
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
-from typing import Any  
+from typing import Any
+
+from app.services.shipment import ShipmentService  
 
 router = APIRouter()
 
@@ -14,7 +16,7 @@ router = APIRouter()
 @router.get("/shipment", response_model=ShipmentRead)
 async def get_shipment(id: int, session: SessionDep):
     # Check for shipment with given id
-    shipment = await session.get(Shipment, id)
+    shipment = ShipmentService(session).get(id)
 
     if shipment is None:
         raise HTTPException(
@@ -26,18 +28,9 @@ async def get_shipment(id: int, session: SessionDep):
 
 ### Create a new shipment with content and weight
 @router.post("/shipment")
-async def submit_shipment(shipment: ShipmentCreate, session: SessionDep) -> dict[str, Any]:
+async def submit_shipment(shipment: ShipmentCreate, session: SessionDep) -> Shipment:
     # Create and assign shipment a new id
-    new_shipment = Shipment(
-        **shipment.model_dump(),
-        status=ShipmentStatus.placed,
-        estimated_delivery=datetime.now() + timedelta(days=3),
-    )
-    session.add(new_shipment)
-    await session.commit()
-    await session.refresh(new_shipment)
-    # Return id for later use
-    return {"id": new_shipment.id}
+    return await ShipmentService(session).add(shipment)
 
 
 ### Update field of a shipment
@@ -51,20 +44,8 @@ async def update_shipment(id: int, shipment_update: ShipmentUpdate, session: Ses
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No data provided to update",
         )
-    shipment = await session.get(Shipment, id)
-
-    if not shipment:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Shipment with id {id} not found",
-        )
-
-    shipment.sqlmodel_update(update)
-
-    session.add(shipment)
-    await session.commit()
-    await session.refresh(shipment)
-
+    
+    shipment = await ShipmentService(session).update(shipment_update)
     return shipment
 
 
@@ -72,6 +53,5 @@ async def update_shipment(id: int, shipment_update: ShipmentUpdate, session: Ses
 @router.delete("/shipment")
 async def delete_shipment(id: int, session: SessionDep) -> dict[str, Any]:
     # Remove from datastore
-    await session.delete(session.get(Shipment, id))
-    await session.commit()
+    
     return {"detail": f"Shipment with id {id} is deleted!"}

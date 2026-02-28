@@ -26,7 +26,7 @@ class ShipmentService:
         await self.session.refresh(new_shipment)
         return new_shipment
 
-    async def update(self, shipment_update: ShipmentUpdate) -> Shipment:
+    async def update(self, id: int, shipment_update: ShipmentUpdate) -> Shipment:
         # Logic to update an existing shipment
         shipment = await self.get(id)
 

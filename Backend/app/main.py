@@ -11,7 +11,7 @@ from app.api.router import router
 @asynccontextmanager
 async def lifespan_handler(app: FastAPI):
     print("Server started...")
-    create_db_tables()
+    await create_db_tables()
     yield
     print("...stopped!")
 
